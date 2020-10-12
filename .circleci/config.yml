@@ -3,7 +3,7 @@
 # Check https://circleci.com/docs/2.0/language-go/ for more details
 version: 2
 jobs:
-  build:
+  test:
     docker:
       # specify the version
       - image: circleci/golang:1
@@ -30,3 +30,41 @@ jobs:
           -c 'CREATE EXTENSION "uuid-ossp"'
       - run: make lint
       - run: make test
+
+  build:
+    docker:
+      # specify the version
+      - image: circleci/golang:1
+        environment:
+          PGPASSWORD: bita123
+    working_directory: /go/src/elbix.dev/engine
+    steps:
+      - checkout
+      - run: make all
+
+  # deploy
+  deploy:
+    docker:
+      # specify the version
+      - image: circleci/golang:1
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: build and push Docker image
+          command: |
+            TAG=0.1.$CIRCLE_BUILD_NUM
+            docker build -t hesabfun/engine:latest -t hesabfun/engine:$TAG .
+            docker login -u="$DOCKER_USER" -p="$DOCKER_PASS"
+            docker push hesabfun/engine:$TAG
+            docker push hesabfun/engine:latest
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - test
+      - build
+      - deploy:
+          requires:
+            - test
+            - build
