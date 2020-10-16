@@ -44,9 +44,10 @@ jobs:
 
   # deploy
   deploy:
-    branches:
-      only:
-        - hesabfun
+    filters:
+      branches:
+        only:
+          - hesabfun
     docker:
       # specify the version
       - image: circleci/golang:1
